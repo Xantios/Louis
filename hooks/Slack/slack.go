@@ -7,8 +7,6 @@ import (
 	"net/http"
 )
 
-// curl -X POST --data-urlencode "payload={\"channel\": \"#opnsense\", \"username\": \"webhookbot\", \"text\": \"This is posted to #my-channel-here and comes from a bot named webhookbot.\", \"icon_emoji\": \":ghost:\"}" https://hooks.slack.com/services/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
-
 // SlackPayload defines the structure of the message payload
 type SlackPayload struct {
 	Text string `json:"text"`
