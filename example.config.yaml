@@ -1,0 +1,23 @@
+debug: false
+interval: 1440 # 1440 minutes == day
+backupPath: ./backups
+
+hooks:
+  slack: https://hooks.slack.com/services/T06NXXXXX/XXXXXXX/XXXXX
+  webhook: http://hook.sacredheart.it/cs/example
+
+OPNSense:
+
+  Lloyd:
+    url: http://10.254.0.1:8080/api
+    username: pietje-puk-1123123123123123123
+    password: blaaaaaaah-ik-weet-ook-niet-waarom-dit-in-een-voorbeel-staat
+    backupPath: "./backups/lloyd"
+
+Proxmox:
+
+  kelso:
+    url: https://kelso.sacredheart.it:8006/api2/json
+    ## Make sure to add the @pam part !!
+    username: root@pam
+    password: LolNoPass4u
