@@ -3,17 +3,19 @@ package Webhook
 import (
 	"bytes"
 	"encoding/json"
-	"log"
+	SimpleLogger "git.sacredheart.it/xantios/simple-logger"
 	"net/http"
 )
 
 type Webhook struct {
 	hookUrl string
+	logger  *SimpleLogger.SimpleLogger
 }
 
-func New(hookUrl string) *Webhook {
+func New(logger *SimpleLogger.SimpleLogger, hookUrl string) *Webhook {
 	return &Webhook{
 		hookUrl: hookUrl,
+		logger:  logger,
 	}
 }
 
@@ -21,14 +23,16 @@ func (s *Webhook) Send(message string) error {
 
 	m, err := json.Marshal(message)
 	if err != nil {
-		log.Fatalf("Failed to marshal JSON: %v", err)
+		s.logger.Error("Failed to marshal JSON: %v", err)
 		return err
 	}
 
 	resp, err := http.Post(s.hookUrl, "application/json", bytes.NewBuffer(m))
 	if err != nil {
-		log.Fatalf("Failed to send request: %v", err)
+		s.logger.Error("Failed to send request: %v", err)
+		return err
 	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {

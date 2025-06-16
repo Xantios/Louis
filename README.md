@@ -13,6 +13,6 @@ Started as some common tooling around OPNSense, then my autism got the better of
 Use username and password for authentication.
 
 ### Todo
-- [ ] Use a common logger
+- [ ] Add Log file
 - [ ] Move json debug tooling from OPNSense to util folder
  

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"git.sacredheart.it/xantios/simple-logger"
 	"github.com/goccy/go-yaml"
 	ClientDrivers "github.com/xantios/louis/clients"
 	"github.com/xantios/louis/clients/OPNSense"
@@ -63,58 +64,60 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cfg.Debug {
-		fmt.Println("Debug mode enabled")
-	}
+	// Logger
+	// @TODO: Add file log ?
+	logger := SimpleLogger.New(SimpleLogger.WithSeverity(SimpleLogger.Debug))
+	logger.Info("Starting Louis")
+	logger.Debug("Debug enabled")
 
 	// Register OPNSense boxes
 	for name, config := range cfg.OPNSense {
-		c := OPNSense.New(config.URL, config.BackupPath, config.Username, config.Password, cfg.Debug)
+		c := OPNSense.New(logger, config.URL, config.BackupPath, config.Username, config.Password, cfg.Debug)
 		RegisterClient(fmt.Sprintf("OPNSense_%s", name), c)
 	}
 
 	// Register Proxmox boxes
 	for name, config := range cfg.Proxmox {
-		p := Proxmox.New(name, config.URL, config.Username, config.Password)
+		p := Proxmox.New(logger, name, config.URL, config.Username, config.Password)
 		RegisterClient(fmt.Sprintf("Proxmox_%s", name), p)
 	}
 
 	// Register hooks
-	s := Slack.New(cfg.Hooks["slack"])
+	s := Slack.New(logger, cfg.Hooks["slack"])
 	RegisterHook("Slack", s)
 
-	w := Webhook.New(cfg.Hooks["webhook"])
+	w := Webhook.New(logger, cfg.Hooks["webhook"])
 	RegisterHook("Webhook", w)
 
 	ticker := time.NewTicker(time.Minute * time.Duration(cfg.Interval))
 	for {
-		Run()
-		fmt.Printf("Sleeping for %d minute(s)...", cfg.Interval)
+		Run(logger)
+		logger.Infof("Sleeping for %d minute(s)...", cfg.Interval)
 		<-ticker.C
 	}
 }
 
-func Dispatch(msg string) {
+func Dispatch(logger *SimpleLogger.SimpleLogger, msg string) {
 	for name, hook := range hooks {
 		e := hook.Send(msg)
 		if e != nil {
-			fmt.Printf("Failed to send message to %s hook", name)
-			fmt.Println(e)
+			logger.Warnf("Failed to send message to %s", name)
+			logger.Warnf(e.Error())
 		}
 	}
 }
 
-func Run() {
-	fmt.Printf("Running %d clients\n", len(clients))
+func Run(logger *SimpleLogger.SimpleLogger) {
+	logger.Infof("Running %d clients", len(clients))
 	for name, instance := range clients {
-		fmt.Println("Checking updates for ", name)
+		logger.Infof("Checking updates for %s", name)
 		shouldUpdate, msg, err := instance.Update()
 		if err != nil {
-			Dispatch(err.Error())
+			Dispatch(logger, err.Error())
 		}
 
 		if shouldUpdate {
-			Dispatch(msg)
+			Dispatch(logger, msg)
 		}
 	}
 }

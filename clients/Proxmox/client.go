@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	SimpleLogger "git.sacredheart.it/xantios/simple-logger"
 	"io"
 	"log"
 	"net/http"
@@ -17,6 +18,7 @@ type Client struct {
 	username string
 	password string
 	nodeName string
+	logger   *SimpleLogger.SimpleLogger
 }
 
 type LoginResponse struct {
@@ -45,17 +47,18 @@ var insecureClient = &http.Client{
 	},
 }
 
-func New(pveName string, url string, username string, password string) *Client {
+func New(logger *SimpleLogger.SimpleLogger, pveName string, url string, username string, password string) *Client {
 	return &Client{
 		client:   insecureClient,
 		url:      url,
 		username: username,
 		password: password,
 		nodeName: pveName,
+		logger:   logger,
 	}
 }
 
-func login(host string, username, password string) (ticket string, err error) {
+func login(logger *SimpleLogger.SimpleLogger, host string, username, password string) (ticket string, err error) {
 	form := url.Values{}
 	form.Add("username", username)
 	form.Add("password", password)
@@ -67,14 +70,16 @@ func login(host string, username, password string) (ticket string, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		fmt.Printf("Expected 200 got: %s\n", resp.Status)
-		body, err := io.ReadAll(resp.Body)
+		// fmt.Printf("Expected 200 got: %s\n", resp.Status)
+		logger.Error("Expected 200 got: %s", resp.Status)
+
+		_, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return "", err
 		}
 
 		resp.Body.Close()
-		fmt.Printf("Body: %s\n", string(body))
+		// fmt.Printf("Body: %s\n", string(body))
 
 		return "", fmt.Errorf("status: %s", resp.Status)
 	}
@@ -130,16 +135,16 @@ func checkUpdates(host string, nodeName string, ticket string) (int, error) {
 }
 
 func (c *Client) Update() (bool, string, error) {
-	ticket, err := login(c.url, c.username, c.password)
+	ticket, err := login(c.logger, c.url, c.username, c.password)
 	if err != nil {
 		log.Fatalf("Login failed: %v", err)
 	}
 
-	fmt.Printf("Ticket: %s\n", ticket)
+	c.logger.Debug("Ticket collected from PVE API")
 
 	count, err := checkUpdates(c.url, c.nodeName, ticket)
 	if err != nil {
-		log.Fatalf("Update check failed: %v", err)
+		c.logger.Error("Failed to check for updates: %v", err)
 	}
 
 	updateAvailable := count > 0

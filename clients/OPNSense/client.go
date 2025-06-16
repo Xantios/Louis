@@ -1,7 +1,7 @@
 package OPNSense
 
 import (
-	"fmt"
+	SimpleLogger "git.sacredheart.it/xantios/simple-logger"
 	"io"
 	"net/http"
 	"time"
@@ -14,9 +14,10 @@ type Client struct {
 	username   string
 	password   string
 	debug      bool
+	logger     *SimpleLogger.SimpleLogger
 }
 
-func New(baseURL string, backupPath string, username string, password string, debug bool) *Client {
+func New(logger *SimpleLogger.SimpleLogger, baseURL string, backupPath string, username string, password string, debug bool) *Client {
 
 	c := &http.Client{
 		// Timeout is high because of VPN
@@ -30,12 +31,13 @@ func New(baseURL string, backupPath string, username string, password string, de
 		password:   password,
 		backupPath: backupPath,
 		debug:      debug,
+		logger:     logger,
 	}
 }
 
 func (c *Client) Get(url string) (*http.Response, string, error) {
 
-	fmt.Printf("Sending REQ to :: %s\n", c.base+url)
+	c.logger.Debugf("Sending REQ to :: %s", c.base+url)
 
 	req, err := http.NewRequest("GET", c.base+url, nil)
 	if err != nil {

@@ -3,7 +3,7 @@ package Slack
 import (
 	"bytes"
 	"encoding/json"
-	"log"
+	SimpleLogger "git.sacredheart.it/xantios/simple-logger"
 	"net/http"
 )
 
@@ -14,11 +14,13 @@ type SlackPayload struct {
 
 type Slack struct {
 	hookUrl string
+	logger  *SimpleLogger.SimpleLogger
 }
 
-func New(hookUrl string) *Slack {
+func New(logger *SimpleLogger.SimpleLogger, hookUrl string) *Slack {
 	return &Slack{
 		hookUrl: hookUrl,
+		logger:  logger,
 	}
 }
 
@@ -30,13 +32,13 @@ func (s *Slack) Send(message string) error {
 
 	m, err := json.Marshal(msg)
 	if err != nil {
-		log.Fatalf("Failed to marshal JSON: %v", err)
+		s.logger.Error("Failed to marshal message to JSON: %v", err)
 		return err
 	}
 
 	resp, err := http.Post(s.hookUrl, "application/json", bytes.NewBuffer(m))
 	if err != nil {
-		log.Fatalf("Failed to send request to Slack: %v", err)
+		s.logger.Error("Failed to send request to Slack: %v", err)
 	}
 	defer resp.Body.Close()
 
